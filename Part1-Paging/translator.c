@@ -20,16 +20,21 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 		
-	char* buf = (char *) malloc(sizeof(256));
+	char* token,* end,* buf = (char *) malloc(256);
+	
 	int offset, page_number, index;
 	
-	while(fgets(buf, sizeof(buf), fp)) {
+	while(fgets(buf, 256, fp)) {
 		if(index == 0) {
 			offset = atoi(buf);
 		} else if(index == 1) {
 			page_number = atoi(buf);
 		} else {
-			strsep(&buf, " ");	
+			token = end = strsep(&buf, " ");	
+			while(token != NULL) {
+				printf("%s\n", token);
+				token = end
+			}
 		}
 		index++;
 	}
