@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 		
-	char* token,* end,* buf = (char *) malloc(256);
+	char* token,* split,* buf = (char *) malloc(256);
 	
 	int offset, page_number, index;
 	
@@ -30,11 +30,11 @@ int main(int argc, char* argv[]) {
 		} else if(index == 1) {
 			page_number = atoi(buf);
 		} else {
-			token = end = strsep(&buf, " ");	
-			while(token != NULL) {
+			split = buf;
+			while((token = strsep(&split, " ")) != NULL) {
 				printf("%s\n", token);
-				token = end
 			}
+			free(token);
 		}
 		index++;
 	}
