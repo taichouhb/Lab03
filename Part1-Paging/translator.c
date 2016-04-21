@@ -1,12 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-typedef struct va {
-	unsigned address;
-	int page;
-	int offset;
-}va;
 
 int main(int argc, char* argv[]) {
 	if(argc != 2) {
@@ -20,21 +13,20 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 		
-	char* token,* split,* buf = (char *) malloc(256);
-	
-	int offset, page_number, index;
-	
+	char* buf = (char *) malloc(256);
+	int offset, pn, index;
+	unsigned long address, pn_address, offset_address;
+
 	while(fgets(buf, 256, fp)) {
 		if(index == 0) {
 			offset = atoi(buf);
 		} else if(index == 1) {
-			page_number = atoi(buf);
+			pn = atoi(buf);
 		} else {
-			split = buf;
-			while((token = strsep(&split, " ")) != NULL) {
-				printf("%s\n", token);
-			}
-			free(token);
+			address = strtoul(buf, NULL, 16);
+			pn_address = ((address<<48)>>48)>>offset;
+			offset_address = (address<<(48 + pn))>>(48 + pn);
+			printf("virtual address 0x%X is in page number %lu and offset %lu\n", (unsigned int)address, pn_address, offset_address);
 		}
 		index++;
 	}
