@@ -21,6 +21,12 @@ void create(char name[8], int32_t size) {
 }
 
 int main(int argc, char* argv[]) {
-		
+
+	if(argv[0] == NULL)
+		{
+			printf("ERROR IN USAGE. INPUT FILE NAME.\n");
+			exit(1);
+		}	
+
 }
 
