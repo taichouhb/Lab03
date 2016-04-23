@@ -13,6 +13,14 @@ typedef struct super{
 	inode inodes[16];
 } super;
 
-int main(int argc, char* argv[]) {
-	
+FILE* open(char* name) {
+	return fopen(name, "r+");
 }
+
+void create(char name[8], int32_t size) {
+}
+
+int main(int argc, char* argv[]) {
+		
+}
+
