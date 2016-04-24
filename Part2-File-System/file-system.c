@@ -18,7 +18,8 @@ FILE* DISK;
 super* sblock;
 
 void write_super(){
-
+	rewind(DISK);
+	fwrite(sblock, 1024, 1, DISK);
 }
 
 void create(char name[8], int32_t size) {
@@ -125,12 +126,6 @@ void ls() {
 	}
 	printf("\n");
 }
-
-void write_super(){
-	rewind(DISK);
-	fwrite(sblock, 1024, 1, DISK);
-}
-
 
 int main(int argc, char* argv[]) {
 	//check if argument is given
