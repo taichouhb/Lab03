@@ -15,8 +15,11 @@ typedef struct super{
 } super;
 
 FILE* DISK;
+super* sblock;
 
 void create(char name[8], int32_t size) {
+	inode *new_node = (inode *) malloc(sizeof(inode));
+	strcpy(inode->name, name);
 
 }
 
@@ -61,6 +64,10 @@ int main(int argc, char* argv[]) {
 				printf("Cannot open %s\n", buf);
 				exit(1);
 			}
+			sblock = (super *) malloc(sizeof(super));
+			fread(sblock->freeblocks, sizeof(char), 128, DISK);
+			fread(sblock->inodes, sizeof(inode), 16, DISK);
+
 		} else {
 			int line_index = 0;
 			while((token = strsep(&buf, " ")) != NULL) {
