@@ -19,10 +19,14 @@ super* sblock;
 
 
 void write_super(){
+	//move file pointer to the start of the disk
 	rewind(DISK);
+	//write in the current free blocks
 	fwrite(sblock->freeblocks, 128, sizeof(char), DISK);
+	//move to the area of the inodes of the super block
 	fseek(DISK, 128, SEEK_SET);
 	for(int i = 0; i < 16; i++) {
+		//write each inode into disk, essentially updating it
 		fwrite(sblock->inodes[i], sizeof(inode), sizeof(char), DISK);
 	}
 }
