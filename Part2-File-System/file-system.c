@@ -17,6 +17,10 @@ typedef struct super{
 FILE* DISK;
 super* sblock;
 
+void write_super(){
+
+}
+
 void create(char name[8], int32_t size) {
 	inode *new_node = (inode *) malloc(sizeof(inode));
 	strcpy(inode->name, name);
@@ -28,7 +32,29 @@ void delete(char name[8]) {
 }
 
 void read(char name[8], int32_t blockNum, char buf[1024]) {
+	//read the specified block from this file into the specified buffer; 
+	//blockNum can range from 0 to 7
+	inode * node = NULL;
+	for(int i = 0; i < 16; i++){ //find node with the name that was passed in
+		if(sblock->inodes[i].name == name){
+			node = &sblock->inodes[i];
+			break;
+		}
+	}
+	if(node == NULL){ //if node is not found
+		printf("%s was not found\n", name);
 
+	}
+	else{
+		if(!fseek(DISK, node->blockPointers[blockNum]*1024, SEEK_SET)){ 
+			//if seek was unsuccesful
+			printf("pointer was not moved succesfully\n");
+		}
+		else{
+			//read data that is being pointed to from the fseek call and write to buf
+			fread(buf, 1024, 1, DISK);
+		}
+	}
 }
 
 void write(char name[8], int32_t blockNum, char buf[1024]) {
@@ -36,7 +62,12 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 }
 
 void ls() {
-
+	for(int i = 0; i < 16; i++){ //go through each inode and print each name, if it has a file there
+		if(sblock->inodes[i].used != 0){
+			printf("%s ", sblock->inodes[i].name);
+		}
+	}
+	printf("\n");
 }
 
 int main(int argc, char* argv[]) {
