@@ -22,13 +22,63 @@ void write_super(){
 }
 
 void create(char name[8], int32_t size) {
-	inode *new_node = (inode *) malloc(sizeof(inode));
-	strcpy(inode->name, name);
+	inode *new_inode = (inode *) malloc(sizeof(inode));
+	strncpy(new_inode->name, name, 8);
+	new_inode->size = size;
 
+	int bp_i = 0;
+	for(int fb_i = 0; fb_i < 128; fb_i++) {
+		if(sblock->freeblocks[fb_i] == 0) {
+			new_inode->blockPointers[bp_i] = fb_i;
+			if(++bp_i == size) {
+				break;
+			}
+		}
+	}
+
+	if(bp_i != size) {
+		printf("Not enough space to allocate %d blocks for %s\n", size, name);
+		free(new_inode);
+		return;
+	}
+
+	for(int bp_i = 0; bp_i < 8; bp_i++) {
+		sblock->freeblocks[new_inode->blockPointers[bp_i]] = 1;
+	}
+
+	for(int i = 0; i < 16; i++) {
+		if(&(sblock->inodes[i]) == NULL) {
+			sblock->inodes[i] = *new_inode;
+		}
+	}
+
+	write_super();
 }
 
 void delete(char name[8]) {
-
+	char *empty_buf = (char *) calloc(1024, sizeof(char)); 
+	int32_t deleted_blocks = int32_t[8];
+	int del_block_pointer = 0;
+	for(i = 0; i < sizeof(sblock->inodes)/sizeof(struct inodes) ; i++){
+		if(strcmp(name, sblock->inodes[i]->name) == 0){
+			//found the correct inode to delete the contents of
+			for(j = 0; j < sizeof(sblock->inodes[i]->blockPointers)/sizeof(int32_t); j++){
+				if(sblock->inodes[i]->blockPointers[j] != NULL){
+					//go to that block in data and delete it.
+					deleted_blocks[del_block_pointer++] = sblock->inodes[i]->blockPointers[j];
+					int response = fseek(DISK, sblock->inodes[i]->blockPointers[j]*1024, SEEK_SET);
+					fwrite(empty_buf, 1024, 1, DISK);
+				}
+			}
+			//now clear the inode
+			free(sblock->inodes[i]);
+			//now set the inodes array in sblock properly
+			for(k = 0; k < sizeof(sblock->freeblocks)/sizeof(char) ; k ++){
+				sblock->freeblocks[deleted_blocks[k]] = 0;
+			}
+			write_super();
+		}
+	}
 }
 
 void read(char name[8], int32_t blockNum, char buf[1024]) {
@@ -58,7 +108,13 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 }
 
 void write(char name[8], int32_t blockNum, char buf[1024]) {
-
+	for(i = 0; i < sizeof(sblock->inodes)/sizeof(struct inodes) ; i++){
+		if(strcmp(name, sblock->inodes[i]->name) == 0){
+			fseek(DISK, sblock->inodes[blockNum]*1024, SEEK_SET);
+			fwrite(buf, 1024, 1, DISK);
+		}
+	}
+	
 }
 
 void ls() {
@@ -69,6 +125,12 @@ void ls() {
 	}
 	printf("\n");
 }
+
+void write_super(){
+	rewind(DISK);
+	fwrite(sblock, 1024, 1, DISK);
+}
+
 
 int main(int argc, char* argv[]) {
 	//check if argument is given
