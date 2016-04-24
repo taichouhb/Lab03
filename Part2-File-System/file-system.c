@@ -17,10 +17,41 @@ typedef struct super{
 FILE* DISK;
 super* sblock;
 
-void create(char name[8], int32_t size) {
-	inode *new_node = (inode *) malloc(sizeof(inode));
-	strcpy(inode->name, name);
+void write_super() {
+}
 
+void create(char name[8], int32_t size) {
+	inode *new_inode = (inode *) malloc(sizeof(inode));
+	strncpy(new_inode->name, name, 8);
+	new_inode->size = size;
+
+	int bp_i = 0;
+	for(int fb_i = 0; fb_i < 128; fb_i++) {
+		if(sblock->freeblocks[fb_i] == 0) {
+			new_inode->blockPointers[bp_i] = fb_i;
+			if(++bp_i == size) {
+				break;
+			}
+		}
+	}
+
+	if(bp_i != size) {
+		printf("Not enough space to allocate %d blocks for %s\n", size, name);
+		free(new_inode);
+		return;
+	}
+
+	for(int bp_i = 0; bp_i < 8; bp_i++) {
+		sblock->freeblocks[new_inode->blockPointers[bp_i]] = 1;
+	}
+
+	for(int i = 0; i < 16; i++) {
+		if(&(sblock->inodes[i]) == NULL) {
+			sblock->inodes[i] = *new_inode;
+		}
+	}
+
+	write_super();
 }
 
 void delete(char name[8]) {
