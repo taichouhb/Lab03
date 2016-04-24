@@ -1,4 +1,4 @@
-#include <stdio.h>
+w#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -88,9 +88,11 @@ void delete(char name[8]) {
 	char *empty_buf = (char *) calloc(1024, sizeof(char)); 
 	int32_t deleted_blocks[8];
 	int del_block_pointer = 0;
+	//loop through inodes, to find name match
 	for(int i = 0; i < 16; i++) {
+		//when match found...
 		if(strcmp(name, sblock->inodes[i]->name) == 0) {
-			//found the correct inode to delete the contents of
+			//delete the contents of the data at the disk by overwriting
 			inode* node = sblock->inodes[i];
 			for(int j = 0; j < 8; j++){
 				if(node->blockPointers[j] == 0) {
@@ -99,6 +101,7 @@ void delete(char name[8]) {
 					//go to that block in data and delete it.
 					deleted_blocks[del_block_pointer++] = node->blockPointers[j];
 					int response = fseek(DISK, node->blockPointers[j] * 1024, SEEK_SET);
+					//overwrite data at that point with an empty buffer
 					fwrite(empty_buf, 1024, 1, DISK);
 				}
 			}
@@ -109,6 +112,7 @@ void delete(char name[8]) {
 				sblock->freeblocks[deleted_blocks[k]] = 0;
 			}
 			write_super();
+			//no need to loop through the rest of the inodes
 			break;
 		}
 	}
@@ -140,8 +144,12 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 
 void write(char name[8], int32_t blockNum, char buf[1024]) {
 	for(int i = 0; i < 16 ; i++){
+		//loop through all the inodes
+		//if the inode matches the name, then write
 		if(strcmp(name, sblock->inodes[i]->name) == 0) {
+			//set file pointer to the correct position based on what was in blockPointer at the blockNum
 			fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
+			//write to disk
 			fwrite(buf, 1024, 1, DISK);
 			break;
 		}
