@@ -58,21 +58,21 @@ void create(char name[8], int32_t size) {
 
 void delete(char name[8]) {
 	char *empty_buf = (char *) calloc(1024, sizeof(char)); 
-	int32_t deleted_blocks = int32_t[8];
+	int32_t deleted_blocks[8];
 	int del_block_pointer = 0;
-	for(i = 0; i < sizeof(sblock->inodes)/sizeof(struct inodes) ; i++){
-		if(strcmp(name, sblock->inodes[i]->name) == 0){
+	for(int i = 0; i < sizeof(sblock->inodes)/sizeof(inode) ; i++){
+		if(strcmp(name, sblock->inodes[i].name) == 0){
 			//found the correct inode to delete the contents of
-			for(j = 0; j < sizeof(sblock->inodes[i]->blockPointers)/sizeof(int32_t); j++){
-				if(sblock->inodes[i]->blockPointers[j] != NULL){
+			for(int j = 0; j < sizeof(sblock->inodes[i].blockPointers)/sizeof(int32_t); j++){
+				if(sblock->inodes[i].blockPointers[j] != 0){
 					//go to that block in data and delete it.
-					deleted_blocks[del_block_pointer++] = sblock->inodes[i]->blockPointers[j];
-					int response = fseek(DISK, sblock->inodes[i]->blockPointers[j]*1024, SEEK_SET);
+					deleted_blocks[del_block_pointer++] = sblock->inodes[i].blockPointers[j];
+					int response = fseek(DISK, sblock->inodes[i].blockPointers[j]*1024, SEEK_SET);
 					fwrite(empty_buf, 1024, 1, DISK);
 				}
 			}
 			//now clear the inode
-			free(sblock->inodes[i]);
+			free(&(sblock->inodes[i]));
 			//now set the inodes array in sblock properly
 			for(k = 0; k < sizeof(sblock->freeblocks)/sizeof(char) ; k ++){
 				sblock->freeblocks[deleted_blocks[k]] = 0;
