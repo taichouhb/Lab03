@@ -74,7 +74,7 @@ void delete(char name[8]) {
 			//now clear the inode
 			free(&(sblock->inodes[i]));
 			//now set the inodes array in sblock properly
-			for(k = 0; k < sizeof(sblock->freeblocks)/sizeof(char) ; k ++){
+			for(int k = 0; k < sizeof(sblock->freeblocks)/sizeof(char) ; k ++){
 				sblock->freeblocks[deleted_blocks[k]] = 0;
 			}
 			write_super();
@@ -109,9 +109,9 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 }
 
 void write(char name[8], int32_t blockNum, char buf[1024]) {
-	for(i = 0; i < sizeof(sblock->inodes)/sizeof(struct inodes) ; i++){
-		if(strcmp(name, sblock->inodes[i]->name) == 0){
-			fseek(DISK, sblock->inodes[blockNum]*1024, SEEK_SET);
+	for(int i = 0; i < sizeof(sblock->inodes)/sizeof(inode) ; i++){
+		if(strcmp(name, sblock->inodes[i].name) == 0){
+			fseek(DISK, sblock->inodes[i].blockPointers[blockNum]*1024, SEEK_SET);
 			fwrite(buf, 1024, 1, DISK);
 		}
 	}
