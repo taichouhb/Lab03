@@ -50,7 +50,7 @@ void delete_unused_inode(inode *new_inode, int assigned_index) {
 void create(char name[8], int32_t size) {
 	//create a new inode
 	inode *new_inode = (inode *) malloc(sizeof(inode));
-	strncpy(new_inode->name, name, 8);
+	strcpy(new_inode->name, name);
 	new_inode->size = size;
 	new_inode->used = 1;
 
@@ -77,7 +77,7 @@ void create(char name[8], int32_t size) {
 	int assigned_index = -1;
 	for(int i = 0; i < 16; i++) {
 		//if name has been taken from namespace then delete the unused inode
-		if(strcmp(sblock->inodes[i]->name, name) == 0) {
+		if(strncmp(sblock->inodes[i]->name, name, 8) == 0) {
 			printf("%s already exists\n", name);
 			delete_unused_inode(new_inode, assigned_index);
 			return;
@@ -113,7 +113,7 @@ void delete(char name[8]) {
 	//loop through inodes, to find name match
 	for(int i = 0; i < 16; i++) {
 		//when match found...
-		if(strcmp(name, sblock->inodes[i]->name) == 0) {
+		if(strncmp(name, sblock->inodes[i]->name, 8) == 0) {
 			//delete the contents of the data at the disk by overwriting
 			inode* node = sblock->inodes[i];
 			for(int j = 0; j < 8; j++){
@@ -122,13 +122,17 @@ void delete(char name[8]) {
 				} else if(node->blockPointers[j] != 0) {
 					//go to that block in data and delete it.
 					deleted_blocks[del_block_pointer++] = node->blockPointers[j];
-					int response = fseek(DISK, node->blockPointers[j] * 1024, SEEK_SET);
+					fseek(DISK, node->blockPointers[j] * 1024, SEEK_SET);
 					//overwrite data at that point with an empty buffer
 					fwrite(empty_buf, 1024, 1, DISK);
 				}
 			}
+
 			//now clear the inode
+			node->used = 0;
+			node->size = 0;
 			free(node);
+			sblock->inodes[i] = (inode *) malloc(sizeof(inode));
 			//now set the inodes array in sblock properly
 			for(int k = 0; k < del_block_pointer; k ++){
 				sblock->freeblocks[deleted_blocks[k]] = 0;
@@ -136,9 +140,10 @@ void delete(char name[8]) {
 			write_super();
 			//no need to loop through the rest of the inodes
 			printf("Deleted %s\n", name);
-			break;
+			return;
 		}
 	}
+	printf("Cannot delete %s, because it does not exist\n", name);
 }
 
 void read(char name[8], int32_t blockNum, char buf[1024]) {
@@ -146,7 +151,7 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 	//blockNum can range from 0 to 7
 	inode* node;
 	for(int i = 0; i < 16; i++){ //find node with the name that was passed in
-		if(strcmp(sblock->inodes[i]->name,name) == 0){
+		if(strncmp(sblock->inodes[i]->name, name, 8) == 0){
 			node = sblock->inodes[i];
 			break;
 		}
@@ -155,13 +160,13 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 	if(node == NULL){ //if node is not found
 		printf("%s was not found\n", name);
 	} else {
-		if(fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET) != 0){ 
+		if(fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET) != 0){
 			//if seek was unsuccesful
 			printf("pointer was not moved succesfully\n");
 		} else {
 			//read data that is being pointed to from the fseek call and write to buf
 			fread(buf, 1024, 1, DISK);
-			printf("Read in %d block from %s, DATA: %s\n", blockNum, name, buf);
+			printf("Read in block %d from %s, DATA: %s\n", blockNum, name, buf);
 		}
 	}
 }
@@ -171,11 +176,11 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 		//loop through all the inodes
 		//if the inode matches the name, then write
 		if(sblock->inodes[i])
-		if(strcmp(name, sblock->inodes[i]->name) == 0) {
+		if(strncmp(name, sblock->inodes[i]->name, 8) == 0) {
 			//set file pointer to the correct position based on what was in blockPointer at the blockNum
 			fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
 			//write to disk
-			printf("write out inode %d, %s DATA: %s\n",i,name, buf);
+			printf("Write out block %d in %s, DATA: %s\n", blockNum, name, buf);
 			fwrite(buf, 1024, 1, DISK);
 			break;
 		}
@@ -185,8 +190,8 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 
 void ls() {
 	for(int i = 0; i < 16; i++){ //go through each inode and print each name, if it has a file there
-		if(sblock->inodes[i]->name != NULL){
-			printf("%s ", sblock->inodes[i]->name);
+		if(sblock->inodes[i]->used != 0){
+			printf("%.*s ", 8, sblock->inodes[i]->name);
 		}
 	}
 	printf("\n");
