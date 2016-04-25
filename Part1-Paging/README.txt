@@ -1,7 +1,3 @@
-#Lab 3 Part 1 ReadMe
-
-##Zach Milrod, Cheyan, Ben Cheung
-
 We start out by making sure that an argument of a filename is given and exits if it isn't given. We then open the file and exits if it cannot open the file.
 
 We then read in each line of the file. If we're on the first line, we set the offset to that value on the first line. If we're on the second line, we then store the page number with the value given on that line. For any other line, we convert the given address to hex. 
