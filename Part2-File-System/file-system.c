@@ -1,6 +1,7 @@
-w#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct inode {
 	char name[8];
