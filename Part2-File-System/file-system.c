@@ -142,7 +142,8 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 			printf("pointer was not moved succesfully\n");
 		} else {
 			//read data that is being pointed to from the fseek call and write to buf
-			fread(buf, 1024, sizeof(char), DISK);
+			printf("Read in DATA: %s\n", buf);
+			fread(buf, 1024, 1, DISK);
 		}
 	}
 }
@@ -151,13 +152,15 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 	for(int i = 0; i < 16 ; i++){
 		//loop through all the inodes
 		//if the inode matches the name, then write
-		if(strcmp(name, sblock->inodes[i]->name) == 0) {
-			//set file pointer to the correct position based on what was in blockPointer at the blockNum
-			fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
-			//write to disk
-			fwrite(buf, 1024, 1, DISK);
-			break;
-		}
+		if(sblock->inodes[i])
+			if(strcmp(name, sblock->inodes[i]->name) == 0) {
+				//set file pointer to the correct position based on what was in blockPointer at the blockNum
+				fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
+				//write to disk
+				printf("write out DATA %d: %s\n",i, buf);
+				fwrite(buf, 1024, 1, DISK);
+				break;
+			}
 	}
 	
 }
@@ -217,7 +220,7 @@ int main(int argc, char* argv[]) {
 			buf = (char *) malloc(256);
 
 			if(strcmp(line[0],"C") == 0) {
-				if(strlen(line[1]) > 7) {
+				if(strlen(line[1]) > 8) {
 					printf("%s is greater than 8 characters long\n", line[1]);
 				}
 				create(line[1], atoi(line[2]));
