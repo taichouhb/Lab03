@@ -1,0 +1,9 @@
+disk1
+C file1.c 3
+L
+W file1.c 1
+R file1.c 1
+D file1.c
+W file1.c
+W file1.c 0
+R file1.c 0

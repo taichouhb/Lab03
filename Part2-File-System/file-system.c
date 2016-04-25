@@ -175,7 +175,7 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 			//set file pointer to the correct position based on what was in blockPointer at the blockNum
 			fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
 			//write to disk
-			printf("write out inode %d, %s DATA: %s\n",i,name, buf);
+			printf("WRITING %d, %s DATA: %s\n",i,name, buf);
 			fwrite(buf, 1024, 1, DISK);
 			break;
 		}
