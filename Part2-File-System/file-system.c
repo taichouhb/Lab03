@@ -154,7 +154,7 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 	if(node == NULL){ //if node is not found
 		printf("%s was not found\n", name);
 	} else {
-		if(!fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET)){ 
+		if(fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET) != 0){ 
 			//if seek was unsuccesful
 			printf("pointer was not moved succesfully\n");
 		} else {
