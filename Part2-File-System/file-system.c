@@ -160,8 +160,8 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 			printf("pointer was not moved succesfully\n");
 		} else {
 			//read data that is being pointed to from the fseek call and write to buf
-			printf("Read in DATA: %s\n", buf);
 			fread(buf, 1024, 1, DISK);
+			printf("Read in %d block from %s, DATA: %s\n", blockNum, name, buf);
 		}
 	}
 }
