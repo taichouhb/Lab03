@@ -1,4 +1,4 @@
 *.swp
-disk0
+disk*
 fs_create
 file-system
