@@ -112,13 +112,15 @@ void delete(char name[8]) {
             //now clear the inode
             free(node);
             //now set the inodes array in sblock properly
-            for(int k = 0; k < 8; k ++){
-                if(deleted_blocks[k] > 16 || deleted_blocks[k] < 0 ){
-                    continue;
-                }
-                else{
-                    sblock->freeblocks[deleted_blocks[k]] = 0;
-                }
+            for(int k = 0; k < del_block_pointer; k ++){
+                // if(deleted_blocks[k] > 16 || deleted_blocks[k] < 0 ){
+                //     continue;
+                // }
+                // else{
+                //     sblock->freeblocks[deleted_blocks[k]] = 0;
+                // }
+            	sblock->freeblocks[deleted_blocks[k]] = 0;
+
             }
             write_super();
             //no need to loop through the rest of the inodes
