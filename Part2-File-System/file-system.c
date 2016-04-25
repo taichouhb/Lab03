@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 
+//struct for inode
 typedef struct inode {
 	char name[8];
 	int32_t size;
@@ -10,15 +11,19 @@ typedef struct inode {
 	int32_t used;
 } inode;
 
+//struct for super block
 typedef struct super{
 	char freeblocks[128];
 	inode* inodes[16];
 } super;
 
+//pointer to disk currently editing
 FILE* DISK;
+//pointer to the current state of the super block
 super* sblock;
 
 
+//updates the super block
 void write_super(){
 	//move file pointer to the start of the disk
 	rewind(DISK);
@@ -32,7 +37,8 @@ void write_super(){
 	}
 }
 
-void delete_inode(inode *new_inode, int assigned_index) {
+//delete an unused inode if it cannot be created due to restrictions
+void delete_unused_inode(inode *new_inode, int assigned_index) {
 	if(assigned_index > -1) {
 		sblock->inodes[assigned_index] = (inode *) malloc(sizeof(inode));
 	}
@@ -40,34 +46,42 @@ void delete_inode(inode *new_inode, int assigned_index) {
 	free(new_inode);
 }
 
+//creates a new file with the given name
 void create(char name[8], int32_t size) {
+	//create a new inode
 	inode *new_inode = (inode *) malloc(sizeof(inode));
 	strncpy(new_inode->name, name, 8);
 	new_inode->size = size;
 	new_inode->used = 1;
 
+	//allocates as many blocks as the file needs
 	int bp_i = 0;
 	for(int fb_i = 1; fb_i < 128; fb_i++) {
 		if(sblock->freeblocks[fb_i] == 0) {
 			new_inode->blockPointers[bp_i] = fb_i;
+			//ends when the appropriate amount of blocks have been allocated
 			if(++bp_i == size) {
 				break;
 			}
 		}
 	}
 
+	//if size has not been fulfilled that means capacity is full
 	if(bp_i != size) {
 		printf("Not enough space to allocate %d blocks for %s\n", size, name);
 		free(new_inode);
 		return;
 	}
 
+	//attempt to assign inode to super block
 	int assigned_index = -1;
 	for(int i = 0; i < 16; i++) {
+		//if name has been taken from namespace then delete the unused inode
 		if(strcmp(sblock->inodes[i]->name, name) == 0) {
 			printf("%s already exists\n", name);
-			delete_inode(new_inode, assigned_index);
+			delete_unused_inode(new_inode, assigned_index);
 			return;
+		//if possible to create inode then create it
 		} else if(sblock->inodes[i]->used == 0 && assigned_index == -1) {
 			assigned_index = i;
 			free(sblock->inodes[i]);
@@ -75,16 +89,19 @@ void create(char name[8], int32_t size) {
 		}
 	}
 
+	//if inode was never assigned to super block then all inodes have been used up and remove unused inode
 	if(assigned_index == -1) {
 		printf("File storage full, cannot create: %s\n", name);
-		delete_inode(new_inode, assigned_index);
+		delete_unused_inode(new_inode, assigned_index);
 		return;
 	}
 
+	//allocate free blocks in super
 	for(int bp_i = 0; bp_i < 8; bp_i++) {
 		sblock->freeblocks[new_inode->blockPointers[bp_i]] = 1;
 	}
 
+	//write to super
 	write_super();
 	printf("Created: %s\n", name);
 }
@@ -157,7 +174,7 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 				//set file pointer to the correct position based on what was in blockPointer at the blockNum
 				fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
 				//write to disk
-				printf("write out DATA %d: %s\n",i, buf);
+				printf("write out inode %d, %s DATA: %s\n",i,name, buf);
 				fwrite(buf, 1024, 1, DISK);
 				break;
 			}
@@ -172,6 +189,15 @@ void ls() {
 		}
 	}
 	printf("\n");
+}
+
+//generate random buffer of length size
+char* generate_dummy_buffer(int size) {
+	char* dummy = (char *) malloc(size);
+	for(int i = 0; i < size; i++) {
+		dummy[i] = '0' + rand()%72;
+	}
+	return dummy;
 }
 
 int main(int argc, char* argv[]) {
@@ -196,12 +222,15 @@ int main(int argc, char* argv[]) {
 	while(fgets(buf, 256, fp)) {
 		if(index == 0) {
 			token = strtok(buf, "\n");
+			//open file only if it has been created
 			if((DISK = fopen(token, "r+")) == NULL) {
 				printf("Cannot open %s\n", buf);
 				exit(1);
 			}
+			//read in freeblocks from disk
 			sblock = (super *) malloc(sizeof(super));
 			fread(sblock->freeblocks, sizeof(char), 128, DISK);
+			//read in state of each inode
 			for(int i = 0; i < 16; i++) {
 				sblock->inodes[i] = (inode *) malloc(sizeof(inode));
 				fread(sblock->inodes[i], sizeof(inode), sizeof(char), DISK);
@@ -209,6 +238,7 @@ int main(int argc, char* argv[]) {
 
 		} else {
 			int line_index = 0;
+			//separate columns and store in line array
 			while((token = strsep(&buf, " ")) != NULL) {
 				if(strcmp(token,"") == 0) {
 					continue;
@@ -217,26 +247,23 @@ int main(int argc, char* argv[]) {
 				line[line_index] = token;
 				line_index++;
 			}
-			buf = (char *) malloc(256);
 
+			buf = (char *) malloc(256);
+			//poor man's switch case for each command
 			if(strcmp(line[0],"C") == 0) {
-				if(strlen(line[1]) > 8) {
-					printf("%s is greater than 8 characters long\n", line[1]);
-				}
+				//we cut off name if name is too long
 				create(line[1], atoi(line[2]));
 			} else if (strcmp(line[0],"D") == 0) {
 				delete(line[1]);	
 			} else if (strcmp(line[0],"L") == 0) {
 				ls();
 			} else if (strcmp(line[0],"R") == 0) {
-				print_buf = (char *) calloc(1024, sizeof(char));
+				print_buf = (char *) malloc(1024);
 				read(line[1], atoi(line[2]), print_buf);
-				printf("%s\n", print_buf);
 				free(print_buf);
 			} else if (strcmp(line[0],"W") == 0) {
-				print_buf = (char *) calloc(1024, sizeof(char));
+				print_buf = generate_dummy_buffer(1024); 
 				write(line[1], atoi(line[2]), print_buf);
-				printf("%s\n", print_buf);
 				free(print_buf);
 			} else {
 				printf("Unknown command %s\n", line[0]);
