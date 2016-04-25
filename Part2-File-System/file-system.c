@@ -81,7 +81,7 @@ void create(char name[8], int32_t size) {
 			printf("%s already exists\n", name);
 			delete_unused_inode(new_inode, assigned_index);
 			return;
-		//if possible to create inode then create it
+			//if possible to create inode then create it
 		} else if(sblock->inodes[i]->used == 0 && assigned_index == -1) {
 			assigned_index = i;
 			free(sblock->inodes[i]);
@@ -107,8 +107,8 @@ void create(char name[8], int32_t size) {
 }
 
 void delete(char name[8]) {
-	char *empty_buf = (char *) calloc(1024, sizeof(char)); 
-	int32_t deleted_blocks[8];
+	char *empty_buf = (char *) calloc(1024, sizeof(char));
+	int32_t deleted_blocks[8] = {0};
 	int del_block_pointer = 0;
 	//loop through inodes, to find name match
 	for(int i = 0; i < 16; i++) {
@@ -135,13 +135,14 @@ void delete(char name[8]) {
 			}
 			write_super();
 			//no need to loop through the rest of the inodes
+			printf("Deleted %s\n", name);
 			break;
 		}
 	}
 }
 
 void read(char name[8], int32_t blockNum, char buf[1024]) {
-	//read the specified block from this file into the specified buffer; 
+	//read the specified block from this file into the specified buffer;
 	//blockNum can range from 0 to 7
 	inode* node;
 	for(int i = 0; i < 16; i++){ //find node with the name that was passed in
@@ -154,7 +155,7 @@ void read(char name[8], int32_t blockNum, char buf[1024]) {
 	if(node == NULL){ //if node is not found
 		printf("%s was not found\n", name);
 	} else {
-		if(!fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET)){ 
+		if(!fseek(DISK, node->blockPointers[blockNum] * 1024, SEEK_SET)){
 			//if seek was unsuccesful
 			printf("pointer was not moved succesfully\n");
 		} else {
@@ -170,16 +171,16 @@ void write(char name[8], int32_t blockNum, char buf[1024]) {
 		//loop through all the inodes
 		//if the inode matches the name, then write
 		if(sblock->inodes[i])
-			if(strcmp(name, sblock->inodes[i]->name) == 0) {
-				//set file pointer to the correct position based on what was in blockPointer at the blockNum
-				fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
-				//write to disk
-				printf("write out inode %d, %s DATA: %s\n",i,name, buf);
-				fwrite(buf, 1024, 1, DISK);
-				break;
-			}
+		if(strcmp(name, sblock->inodes[i]->name) == 0) {
+			//set file pointer to the correct position based on what was in blockPointer at the blockNum
+			fseek(DISK, sblock->inodes[i]->blockPointers[blockNum] * 1024, SEEK_SET);
+			//write to disk
+			printf("write out inode %d, %s DATA: %s\n",i,name, buf);
+			fwrite(buf, 1024, 1, DISK);
+			break;
+		}
 	}
-	
+
 }
 
 void ls() {
@@ -254,7 +255,7 @@ int main(int argc, char* argv[]) {
 				//we cut off name if name is too long
 				create(line[1], atoi(line[2]));
 			} else if (strcmp(line[0],"D") == 0) {
-				delete(line[1]);	
+				delete(line[1]);
 			} else if (strcmp(line[0],"L") == 0) {
 				ls();
 			} else if (strcmp(line[0],"R") == 0) {
@@ -262,7 +263,7 @@ int main(int argc, char* argv[]) {
 				read(line[1], atoi(line[2]), print_buf);
 				free(print_buf);
 			} else if (strcmp(line[0],"W") == 0) {
-				print_buf = generate_dummy_buffer(1024); 
+				print_buf = generate_dummy_buffer(1024);
 				write(line[1], atoi(line[2]), print_buf);
 				free(print_buf);
 			} else {
