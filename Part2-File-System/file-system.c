@@ -165,7 +165,6 @@ void write1(char name[8], int32_t blockNum, char buf[1024]) {
             break;
         }
     }
-    
 }
 
 void ls() {
