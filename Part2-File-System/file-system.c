@@ -130,7 +130,7 @@ void delete(char name[8]) {
 			//now clear the inode
 			free(node);
 			//now set the inodes array in sblock properly
-			for(int k = 0; k < 8; k ++){
+			for(int k = 0; k < del_block_pointer; k ++){
 				sblock->freeblocks[deleted_blocks[k]] = 0;
 			}
 			write_super();
